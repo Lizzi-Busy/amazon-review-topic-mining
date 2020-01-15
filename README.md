@@ -55,5 +55,7 @@ The topic model will contribute to this project in two ways. Firstly, the model 
 </details>
 
 
-## Visuals
+## Walkthrough
+
+TBD
 
