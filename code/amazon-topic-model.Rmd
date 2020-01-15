@@ -1,0 +1,206 @@
+---
+title: "Code for project: Amazon smartphone review topic modeling"
+output: html_notebook
+---
+
+## 1. Create corpus
+
+```{r}
+library(dplyr)
+library(tm)
+library(spacyr)
+library(textstem)
+
+source("functions/helper_functions.R")
+source("functions/keyness_functions.R")
+
+# save our text
+review_df <- read.csv("./data/reviews.csv")
+# format date
+review_df <- review_df %>%
+  mutate(year = format(as.Date(review_df$date, "%m/%d/%Y"),"%Y"))
+
+# create corpus
+review_corpus <- Corpus(VectorSource(review_df$body))
+
+# attach metadata
+meta(review_corpus, tag="year") <- review_df$year
+meta(review_corpus, tag="title") <- review_df$title
+meta(review_corpus, tag="rating") <- review_df$rating
+meta(review_corpus, tag="brand") <- review_df$brand
+meta(review_corpus, tag="product") <- review_df$product
+```
+
+
+## 2. Pre-processing
+
+
+```{r}
+# regularization
+review_corpus <- tm_map(review_corpus, content_transformer(tolower))  # lower case
+review_corpus <- tm_map(review_corpus, removeNumbers)  # remove numbers
+review_corpus <- tm_map(review_corpus, removePunctuation)  # remove punctuation
+review_corpus <- tm_map(review_corpus, lemmatize_strings) # lemmatize
+review_corpus <- tm_map(review_corpus, removeWords, 
+                        c("the", "and", stopwords("english"))) # remove stopwords
+
+# remove words associated with our search terms
+review_corpus <- tm_map(review_corpus, removeWords, 
+                        c("phone", "cell", "mobile","smart"))
+```
+
+```{r}
+# load pre-compiled wordlist
+load("./data/mywordlist.RData")
+
+# remove all but nouns
+review_corpus <- tm_map(review_corpus, removeWords, mywordlist)
+# remove extra whitespace
+review_corpus <- tm_map(review_corpus, stripWhitespace)
+
+#inspect(review_corpus[1])
+```
+
+## 3. Create dtm
+
+```{r}
+doc.lengths <- rowSums(as.matrix(DocumentTermMatrix(review_corpus)))
+review_dtm <- DocumentTermMatrix(review_corpus[doc.lengths > 0])
+
+#inspect(review_dtm["100",])
+```
+
+
+## 4. Modeling
+
+```{r}
+library(lda)
+library(topicmodels)
+
+# topic modeling
+ldaOut <- LDA(review_dtm, 8)
+```
+
+* check top terms in each topic
+
+```{r}
+# top terms in each topic
+ldaOut.terms <- lda::top.topic.words(posterior(ldaOut)$terms, 10, by.score = T)
+
+# rename topics
+colnames(ldaOut.terms) <- c("Topic 1 battery", "Topic 2 camera & display", 
+                              "Topic 3 brand", "Topic 4 basic features", 
+                           "Topic 5 seller's reliability", "Topic 6 carrier", 
+                           "Topic 7 general concern", "Topic 8 operational system")
+```
+
+* check topic ranking
+
+```{r}
+# topic ranking
+
+# topic probability within the entire corpus
+ldaOut.rank <- colSums(posterior(ldaOut)$topics) / nrow(review_dtm)
+
+# rename the topics
+names(ldaOut.rank) <- c("battery", "camera & display", "brand", "basic features", 
+                          "customer service", "carrier", "general concern", "operational system")
+
+# rank in decreasing order
+data.frame(rank = c(1:8), probability = sort(ldaOut.rank, decreasing = T))
+```
+
+
+* check topics per document
+
+```{r}
+# topics per document
+ldaOut.topics <- as.matrix(topics(ldaOut,3)) # select the top 3 topics
+```
+
+
+## 5. Visuals
+
+* plot topic ranks
+
+```{r}
+library(ggplot2)
+
+#plot rank
+df <- data.frame(rank = c(1:8),
+                 topic = factor(c("operational system","basic features","battery","camera & display",
+                           "brand", "carrier", "general concern","customer service")),
+                 probability = sort(ldaOut.rank))
+
+ggplot(df, aes(x=reorder(topic, probability), y=probability, fill=factor(probability))) +
+  geom_bar(stat="identity", width=0.8) +
+  geom_text(aes(label=round(probability,2)), color="snow4", size=3.5)+
+  xlab("topic") +
+  ylab("proportion") +
+  coord_flip() +
+  theme_classic() +
+  scale_fill_brewer(palette="Blues")+
+  theme(legend.position="none")
+```
+
+* word cloud of keywords
+
+```{r}
+library(wordcloud)
+
+topic <- 1 # can be 1-8
+
+# create word cloud for the topic
+df <- data.frame(term = ldaOut@terms, p = exp(ldaOut@beta[topic,])) %>% arrange(-p)
+wordcloud(words = df$term,
+          freq = df$p,
+          min.freq = 1,
+          max.words = 100,
+          random.order = FALSE,
+          rot.per = 0.05,
+          colors=brewer.pal(8, "Dark2"))
+```
+
+* plot topic proportions by year
+
+```{r}
+# aggregate mean topic proportions by year
+topic.trend <- aggregate(posterior(ldaOut)$topics, by = list(year=review_df$year[1:20638]), mean)
+# assign topic names
+colnames(topic.trend)[2:9] <- c("Topic 1 battery", "Topic 2 camera & display", 
+                              "Topic 3 brand", "Topic 4 basic features", 
+                           "Topic 5 seller's reliability", "Topic 6 carrier", 
+                           "Topic 7 general concern", "Topic 8 operational system")
+# reshape data frame
+library(reshape2)
+topic.trend <- melt(topic.trend, id.vars = "year")
+colnames(topic.trend) <- c("year", "topic", "proportion")
+```
+
+```{r}
+# proportional bar plot
+ggplot(topic.trend, aes(fill=topic, y=proportion, x=factor(year))) +
+  geom_bar(position='fill', stat="identity", width=0.7) +
+  xlab('year') +
+  ylab('proportion') +
+  labs(fill = "topic") +
+  scale_fill_brewer(palette="Blues") +
+  theme_classic()
+```
+
+```{r}
+library(ggthemes)
+
+topic.trend2 <- filter(topic.trend, topic=="Topic 3 brand"|
+                         topic=="Topic 4 basic features" |
+                         topic=="Topic 5 seller's reliability"|
+                         topic=="Topic 6 carrier"
+                         )
+# trend line
+ggplot(topic.trend2, aes(x=year, y=proportion, group=topic)) +
+  geom_line(aes(color=topic))+
+  geom_point(aes(color=topic)) +
+  ylab("topic proportion") +
+  theme_classic()
+```
+
