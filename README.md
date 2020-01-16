@@ -40,9 +40,9 @@ Keywords: pos tagging, lemmatization, stopword removal
 *Non-Standard Word Removal.* It was determined that standard stopword removal is not sufficient for this corpus. Smartphone reviews have properties that differ from the scientific journals and news articles typically used in topic modeling. Most obviously different is the use of series and version labels for electronic products. For example, in "Moto Z Droid version XT1635", the phrases "Z Droid" and "XT1635" do not hold any semantic meaning. They are tantamount to proper nouns for a particular Motorola release. These words are not useful in detecting meaningful topics in our data. Therefore, we used POS tagger in `spacyr` to identify word types and eliminate all non-standard dictionary words from the corpus. That helped us reduce runtime while still having good results.
 </details>
 
-**Modeling**
+**LDA Modeling**
 
-Keyword: LDA!
+Keyword: latent Dirichlet allocation, time series
 
 <details>
   <summary>Click to expand</summary>
@@ -58,4 +58,8 @@ The topic model will contribute to this project in two ways. Firstly, the model 
 ## Walkthrough
 
 TBD
+
+<p align="center">
+  <img src="/plot/topic1-wordcloud.png" width="250">
+</p>
 
