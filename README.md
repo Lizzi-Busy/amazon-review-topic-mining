@@ -4,6 +4,8 @@ This project established a Latent Dirichlet Allocation (LDA) model in R to exami
 
 Key ideas include: topic modeling, POS tagging, clustering, and time series.
 
+[*link to my essay goes here*](topic-mining-essay.pdf)
+
 
 ## Dependencies
 
@@ -20,7 +22,7 @@ Key ideas include: topic modeling, POS tagging, clustering, and time series.
 
 ## Data
 
-The empirical data of this project comprises over 20,000 Amazon smartphone reviews spanning Jan 2013 – Dec 2018 that Griko Nibras has compiled and provided on his website (https://www.kaggle.com/grikomsn/amazon-cell-phones-reviews#20190928-reviews.csv). 
+The empirical data of this project comprises over 20,000 Amazon smartphone reviews spanning Jan 2013 – Dec 2018 that Griko Nibras has compiled and provided on his [website](https://www.kaggle.com/grikomsn/amazon-cell-phones-reviews/version/1#20190928-reviews.csv). 
 
 The dataset includes both locked and unlocked carriers, and scoped on 9 brands: Apple, Google, Huawei, Motorola, Nokia, OnePlus, Samsung, Sony, Xiaomi.
 
@@ -63,3 +65,8 @@ TBD
   <img src="/plot/topic1-wordcloud.png" width="250">
 </p>
 
+## References
+
+* Bryant, Laurence. 2019. "Ten Years of Mobile Evolution: a look at the Samsung Galaxy S series". [[link]](https://community.arm.com/developer/ip-products/processors/b/processors-ip-blog/posts/samsung-galaxy-s-ten-years-of-mobile-evolution).
+* Jockers, Matthew L., and David Mimno. 2012. "Significant Themes in 19th-Century Literature". *Faculty Publications – Department of English* 105. [[link]](http://digitalcommons.unl.edu/englishfacpubs/105)
+* Nibras, Griko. 2019. "Amazon Cell Phones Reviews". [[link]](https://www.kaggle.com/grikomsn/amazon-cell-phones-reviews/version/1#20190928-reviews.csv)
